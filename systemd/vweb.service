@@ -1,0 +1,15 @@
+[Unit]
+Description=Vweb Server
+After=multi-user.target network.target redis.service postgresql.service
+
+
+[Service]
+Type=simple
+User=vbet
+Group=vbet
+WorkingDirectory=/home/vbet/run
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/vbet/run/bin/vweb
+
+[Install]
+WantedBy=multi-user.target

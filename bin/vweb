@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+import sys
+import os
+import inspect
+# pylint : disable=import-outside-toplevel
+import multiprocessing
+import re
+import sys
+from daphne.cli import CommandLineInterface
+import json
+
+
+exec_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+app_dir = os.path.dirname(exec_dir)
+sys.path.insert(0, app_dir)
+
+from vbet.core import settings
+
+
+class SubP(multiprocessing.Process):
+    def __init__(self, host: str, port: str):
+        super(SubP, self).__init__()
+        self.host = host
+        self.port = port
+
+    def run(self):
+        config = ["vweb.vweb.asgi:application", "-b", self.host, "-p", self.port]
+        sys.argv.extend(config)
+        sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])
+        sys.exit(CommandLineInterface.entrypoint())
+
+
+if __name__ == "__main__":
+    config = {}
+    with open(settings.DATA_DIR+"/vweb.json") as f:
+        config = json.load(f)
+    tasks = []
+    for port in config.get('servers'):
+        p = SubP("0.0.0.0", str(port))
+        p.start()
+        tasks.append(p)
+    for task in tasks:
+        task.join()
+

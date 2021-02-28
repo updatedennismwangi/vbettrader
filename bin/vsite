@@ -1,0 +1,74 @@
+#!/bin/bash
+
+function rootSetup(){
+  # Check root privileges
+  if (( $EUID != 0 )); then
+      echo "Please run as root"
+      exit
+  fi
+}
+if [ "$#" -ne 1 ]
+then
+  echo "Usage: Must supply a domain"
+  exit 1
+fi
+
+DOMAIN=$1
+SERVER_PATH=/etc/nginx/sites-enabled
+CERT_PATH=/etc/ssl/certs
+REMOTE_ADDR='$remote_addr'
+HOST='$host'
+PORT=443
+PROXY_FORWARDED='$proxy_add_x_forwarded_for'
+HTTP_UPGRADE='$http_upgrade'
+TRY_URI='$uri'
+REQUEST_URI='$request_uri'
+
+
+cat << EOF > "$SERVER_PATH/$DOMAIN"
+upstream channels-backend {
+    server localhost:55544;
+    server localhost:55545;
+}
+server {
+    listen              $PORT ssl;
+    server_name         $DOMAIN;
+    ssl_certificate     ${CERT_PATH}/$DOMAIN.crt;
+    ssl_certificate_key ${CERT_PATH}/$DOMAIN.key;
+    ssl_protocols       TLSv1 TLSv1.1 TLSv1.2;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+
+    root /home/vclient/www/vbettrader;
+
+    index index.html;
+
+    location / {
+      try_files ${TRY_URI} ${TRY_URI}/ /index.html;
+    }
+
+    location /api {
+      proxy_pass http://channels-backend;
+      proxy_set_header X-Real-IP ${REMOTE_ADDR};
+      proxy_set_header Host ${HOST};
+      proxy_set_header X-Forwarded-For ${PROXY_FORWARDED};
+
+      # WebSocket support
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade ${HTTP_UPGRADE};
+      proxy_set_header Connection "upgrade";
+    }
+}
+server {
+	listen 80 default_server;
+	listen [::]:80 default_server;
+
+	root /var/www/html;
+
+	server_name $DOMAIN;
+
+	location / {
+		return 301 https://${HOST}${REQUEST_URI};
+	}
+}
+EOF
+echo "Domain ${DOMAIN} setup successfully"

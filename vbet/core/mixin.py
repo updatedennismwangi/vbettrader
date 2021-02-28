@@ -1,0 +1,7 @@
+class StatusMap:
+    RUNNING = 'RUNNING'
+    PAUSED = 'PAUSED'
+    INACTIVE = 'INACTIVE'
+    OFFLINE = 'OFFLINE'
+    ACTIVE = 'ACTIVE'
+    SLEEPING = 'SLEEPING'

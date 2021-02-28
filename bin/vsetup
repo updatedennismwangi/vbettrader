@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+import os
+import sys
+import inspect
+import django
+
+
+exec_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+app_dir = os.path.dirname(exec_dir)
+sys.path.insert(0, app_dir)
+
+
+import vweb
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'vweb.vweb.settings'
+
+BETIKA = 'betika'
+MOZZART = 'mozzart'
+
+
+BUNDESLIGA = 41047
+LALIGA = 14036
+PREMIER = 14045
+CALCIO = 14035
+KPL = 14050
+
+
+BACKENDS = {
+    BETIKA: {
+        'name': BETIKA,
+        'competitions': [CALCIO, LALIGA, PREMIER, BUNDESLIGA, KPL]
+    },
+    MOZZART: {
+        'name': MOZZART,
+        'competitions': [CALCIO, LALIGA, PREMIER]
+    }
+}
+
+
+def main():
+    django.setup()
+    from vweb.vclient.models import ProviderInstalled
+    for backend_name, backend in BACKENDS.items():
+        provider = ProviderInstalled(name=backend_name, competitions=backend.get('competitions'))
+        provider.save()
+
+
+def user():
+    django.setup()
+    from vweb.vclient.models import User
+    user = User(email="update@vbettrader.com", is_staff=True, is_superuser=True)
+    user.set_password("updatemenow")
+    user.save()
+
+
+if __name__ == "__main__":
+    main()
+    # user()
+

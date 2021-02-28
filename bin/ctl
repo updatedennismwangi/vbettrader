@@ -1,0 +1,5 @@
+#!/bin/bash
+session="vbet"
+tmux new-session -d -s $session
+tmux rename-window -t 0 'Vbet'
+tmux send-keys -t 'Vbet' '/home/vbet/venv/bin/python /home/vbet/vbettrader/vbet/bin/vbet' C-m
